@@ -1,0 +1,47 @@
+#include <iostream>
+#include <httplib.h>
+#include <json.hpp>
+
+using json = nlohmann::json;
+
+std::string translateText(const std::string& text, const std::string& source_lang, const std::string& target_lang) {
+    std::string result;
+
+    // Replace with your Google Cloud API Key
+    std::string api_key = "YOUR_GOOGLE_CLOUD_API_KEY";
+
+    // Create the URL for Google Translate API request
+    std::string url = "https://translation.googleapis.com/language/translate/v2?key=" + api_key;
+    url += "&q=" + text;
+    url += "&source=" + source_lang;
+    url += "&target=" + target_lang;
+
+    // Make a GET request to the Google Translate API
+    httplib::Client cli("translation.googleapis.com");
+    auto res = cli.Get(url.c_str());
+    
+    // Check if the request was successful
+    if (res && res->status == 200) {
+        json response = json::parse(res->body);
+        if (response.find("data") != response.end() && response["data"].find("translations") != response["data"].end()) {
+            result = response["data"]["translations"][0]["translatedText"].get<std::string>();
+        }
+    } else {
+        std::cerr << "Error: Unable to translate text. Status code: " << res->status << std::endl;
+    }
+
+    return result;
+}
+
+int main() {
+    std::string text_to_translate = "Hello, how are you?";
+    std::string source_lang = "en"; // English
+    std::string target_lang = "fr"; // French
+
+    std::string translated_text = translateText(text_to_translate, source_lang, target_lang);
+
+    std::cout << "Original Text: " << text_to_translate << std::endl;
+    std::cout << "Translated Text: " << translated_text << std::endl;
+
+    return 0;
+}
